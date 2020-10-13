@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ungque/utility/my_contstant.dart';
 import 'package:ungque/utility/normal_dialog.dart';
 import 'package:ungque/widget/my_service.dart';
@@ -14,6 +15,21 @@ class Authen extends StatefulWidget {
 
 class _AuthenState extends State<Authen> {
   String user, password;
+
+  @override
+  void initState() {
+    super.initState();
+    checkStatusLogin();
+  }
+
+  Future<Null> checkStatusLogin() async {
+    try {
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      if (preferences.getString('User') != null) {
+        routeToService();
+      }
+    } catch (e) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,18 +99,22 @@ class _AuthenState extends State<Authen> {
         var result = json.decode(value.data);
         for (var map in result) {
           if (password == map['Password']) {
-            Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MyService(),
-                ),
-                (route) => false);
+            saveUser();
           } else {
             normalDialog(context, 'Password False');
           }
         }
       }
     });
+  }
+
+  void routeToService() {
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MyService(),
+        ),
+        (route) => false);
   }
 
   Container buildUser() {
@@ -140,5 +160,11 @@ class _AuthenState extends State<Authen> {
       width: 120,
       child: Image.asset('images/logo.png'),
     );
+  }
+
+  Future<Null> saveUser() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    preferences.setString('User', user);
+    routeToService();
   }
 }
